@@ -71,3 +71,9 @@ rules:
     - error
   space-infix-ops:
     - error
+  func-call-spacing:
+    - error
+  key-spacing:
+    - error
+  comma-spacing:
+    - error
