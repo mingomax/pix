@@ -126,7 +126,7 @@ module('Unit | Model | student', function(hooks) {
     });
   });
 
-  module.only('#isAuthenticatedWithGarOrEmailOnly', function(hooks) {
+  module('#isAuthenticatedWithGarOrEmailOnly', function(hooks) {
     let store;
     hooks.beforeEach(function() {
       store = this.owner.lookup('service:store');
