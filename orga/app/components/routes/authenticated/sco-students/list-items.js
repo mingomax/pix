@@ -22,7 +22,7 @@ export default class ListItems extends Component {
     if (this.currentUser.isAgriculture) {
       return '.csv';
     }
-    return '.xml';
+    return ['.xml', '.zip'];
   }
 
   get urlToDownloadCsvTemplate() {
