@@ -1,5 +1,7 @@
 BEGIN;
 
+create extension "uuid-ossp";
+
 -----------------------------------------------------------------------------------------------------
 --				Recalage des séquences       --------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------
@@ -267,12 +269,13 @@ CREATE TEMPORARY TABLE inserted_users (
   user_email VARCHAR
 ) ON COMMIT DROP;
 WITH inserted_users_cte AS (
-  INSERT INTO users("firstName", "lastName", "email", "password")
+  INSERT INTO users("firstName", "lastName", "email", "password", "samlId")
   SELECT
     r_s_a.rand_str,
     r_s_b.rand_str,
     r_s_a.rand_str || '.' || r_s_b.rand_str || (currval(pg_get_serial_sequence('users','id'))+1) || '@example.net',
-    'default_password'
+    'default_password',
+    uuid_generate_v4()
   FROM (
     SELECT (
       SELECT pick_random_number(get_random_string_count(), 0, generator) AS first_name_rownum
