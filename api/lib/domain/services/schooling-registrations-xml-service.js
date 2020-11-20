@@ -126,29 +126,28 @@ module.exports = {
 
 async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
   parser = await XMLParser.create(path)
-  const encoding = await _detectEncodingFromFirstLineOfSiecleFile(path);
 
-  const UAIFromSIECLE = await _extractUAI(path, encoding);
+  const UAIFromSIECLE = await _extractUAI(path);
   const UAIFromUserOrganization = organization.externalId;
 
   if (UAIFromSIECLE !== UAIFromUserOrganization) {
     throw new FileValidationError(UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI);
   }
 
-  const schoolingRegistrations = await _processSiecleFile(path, encoding);
+  const schoolingRegistrations = await _processSiecleFile(path);
 
   return schoolingRegistrations.filter((schoolingRegistration) => !isUndefined(schoolingRegistration.division));
 }
 
-function _extractUAI(path, encoding) {
-  return _withSiecleStream(path, encoding, _extractUAIFromStream);
+function _extractUAI(path) {
+  return _withSiecleStream(path, _extractUAIFromStream);
 }
 
-async function _processSiecleFile(path, encoding) {
-  return _withSiecleStream(path, encoding, _extractStudentRegistrationsFromStream);
+async function _processSiecleFile(path,) {
+  return _withSiecleStream(path, _extractStudentRegistrationsFromStream);
 }
 
-async function _withSiecleStream(path, encoding, fn) {
+async function _withSiecleStream(path, fn) {
   const siecleFileStream = await parser.getStream();
 
   try {
@@ -241,35 +240,6 @@ function _mapStudentInformationToSchoolingRegistration(nodeData) {
   };
 }
 
-async function _readFirstLineFromFile(path) {
-  const readStream = await parser._getRawStream();
-  return new Promise((resolve, reject) => {
-    const lineEndingCharacter = '\n';
-    const BOM = 0xFEFF;
-    let value = '';
-    let position = 0;
-    let index;
-    readStream.on('data', (chunk) => {
-      index = chunk.indexOf(lineEndingCharacter);
-      value += chunk;
-      if (index === -1) {
-        position += chunk.length;
-      } else {
-        position += index;
-        readStream.destroy();
-      }
-    })
-      .on('close', () => {
-        const rawFirstLine = value;
-        const lineStartsAt = rawFirstLine.charCodeAt(0) === BOM ? 1 : 0;
-        const lineEndsAt = position;
-        const firstLine = rawFirstLine.slice(lineStartsAt, lineEndsAt);
-        resolve(firstLine);
-      })
-      .on('error', reject);
-  });
-}
-
 function _isSchoolingRegistrationNode(xmlNode) {
   return xmlNode.startsWith(ELEVE_ELEMENT) || xmlNode.startsWith(STRUCTURE_ELEVE_ELEMENT);
 }
@@ -284,11 +254,6 @@ function _isStudentEligible(studentData, mapSchoolingRegistrationsByStudentId) {
 function _getValueFromParsedElement(obj) {
   if (isNil(obj)) return null;
   return (Array.isArray(obj) && !isEmpty(obj)) ? obj[0] : obj;
-}
-
-async function _detectEncodingFromFirstLineOfSiecleFile(path) {
-  const firstLine = await _readFirstLineFromFile(path);
-  return xmlEncoding(Buffer.from(firstLine)) || DEFAULT_FILE_ENCODING;
 }
 
 function processStudentsNodes(mapSchoolingRegistrationsByStudentId, nodeData, nationalStudentIds) {
@@ -334,18 +299,4 @@ function _unzippedStream(path) {
   });
 
   return stream;
-}
-
-async function createStream(path) {
-  const { ext } = await FileType.fromFile(path);
-  let stream = null;
-  if (ext === 'zip') {
-    stream = _unzippedStream(path);
-  }
-  else {
-    stream = fs.createReadStream(path);
-  }
-
-  return stream;
-
 }
