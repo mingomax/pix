@@ -123,15 +123,15 @@ async function extractSchoolingRegistrationsInformationFromSIECLE(path, organiza
   return schoolingRegistrations.filter((schoolingRegistration) => !isUndefined(schoolingRegistration.division));
 }
 
-function _extractUAI(path) {
-  return _withSiecleStream(path, _extractUAIFromStream);
+function _extractUAI() {
+  return _withSiecleStream( _extractUAIFromStream);
 }
 
-async function _processSiecleFile(path,) {
-  return _withSiecleStream(path, _extractStudentRegistrationsFromStream);
+async function _processSiecleFile() {
+  return _withSiecleStream(_extractStudentRegistrationsFromStream);
 }
 
-async function _withSiecleStream(path, fn) {
+async function _withSiecleStream(fn) {
   const siecleFileStream = await parser.getStream();
 
   try {
@@ -267,20 +267,4 @@ function _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId, national
   if (nationalStudentId && nationalStudentIds.indexOf(nationalStudentId) !== -1) {
     throw new SameNationalStudentIdInFileError(nationalStudentId);
   }
-}
-
-function _unzippedStream(path) {
-  const zip = new StreamZip({ file: path });
-  const stream = new StreamPipe();
-
-  zip.on('entry', (entry) => {
-    zip.stream(entry, (err, stm) => {
-
-      if (!entry.name.includes('/')) {
-        stm.pipe(stream);
-      }
-    });
-  });
-
-  return stream;
 }
