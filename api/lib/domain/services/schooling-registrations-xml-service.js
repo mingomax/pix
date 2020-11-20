@@ -51,10 +51,23 @@ function _unzippedStream(path) {
 const ZIP = 'zip';
 
 class XMLParser {
+  static async create(path) {
+    const parser = new XMLParser(path)
+    await parser._detectEncoding();
+
+    return parser;
+  }
+
   constructor(path) {
     this.path = path;
   }
-  async getStream(){
+
+  async _detectEncoding() {
+    const firstLine = await this._readFirstLineFromFile();
+    this.encoding = xmlEncoding(Buffer.from(firstLine)) || DEFAULT_FILE_ENCODING;
+  }
+
+  async _getRawStream(){
     let stream;
     if (await this._isFileZipped()) {
       stream = _unzippedStream(this.path);
@@ -65,9 +78,43 @@ class XMLParser {
     return stream;
   }
 
+  async getStream(){
+    const stream = await this._getRawStream();
+    return stream.pipe(iconv.decodeStream(this.encoding))
+  }
+
   async _isFileZipped() {
     const { ext } = await FileType.fromFile(this.path);
     return ext === ZIP
+  }
+
+  async _readFirstLineFromFile() {
+    const readStream = await this._getRawStream();
+    return new Promise((resolve, reject) => {
+      const lineEndingCharacter = '\n';
+      const BOM = 0xFEFF;
+      let value = '';
+      let position = 0;
+      let index;
+      readStream.on('data', (chunk) => {
+        index = chunk.indexOf(lineEndingCharacter);
+        value += chunk;
+        if (index === -1) {
+          position += chunk.length;
+        } else {
+          position += index;
+          readStream.destroy();
+        }
+      })
+        .on('close', () => {
+          const rawFirstLine = value;
+          const lineStartsAt = rawFirstLine.charCodeAt(0) === BOM ? 1 : 0;
+          const lineEndsAt = position;
+          const firstLine = rawFirstLine.slice(lineStartsAt, lineEndsAt);
+          resolve(firstLine);
+        })
+        .on('error', reject);
+    });
   }
 }
 
@@ -78,7 +125,7 @@ module.exports = {
 };
 
 async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
-  parser = new XMLParser(path)
+  parser = await XMLParser.create(path)
   const encoding = await _detectEncodingFromFirstLineOfSiecleFile(path);
 
   const UAIFromSIECLE = await _extractUAI(path, encoding);
@@ -102,13 +149,12 @@ async function _processSiecleFile(path, encoding) {
 }
 
 async function _withSiecleStream(path, encoding, fn) {
-  const rawStream = await parser.getStream();
-  const siecleFileStream = rawStream.pipe(iconv.decodeStream(encoding));
+  const siecleFileStream = await parser.getStream();
 
   try {
     return await fn(siecleFileStream);
   } finally {
-    rawStream.destroy();
+    siecleFileStream.destroy();
   }
 }
 
@@ -196,7 +242,7 @@ function _mapStudentInformationToSchoolingRegistration(nodeData) {
 }
 
 async function _readFirstLineFromFile(path) {
-  const readStream = await parser.getStream();
+  const readStream = await parser._getRawStream();
   return new Promise((resolve, reject) => {
     const lineEndingCharacter = '\n';
     const BOM = 0xFEFF;
