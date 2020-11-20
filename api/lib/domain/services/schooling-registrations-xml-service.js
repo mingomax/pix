@@ -9,6 +9,7 @@ const sax = require('sax');
 const saxPath = require('saxpath');
 const xmlEncoding = require('xml-buffer-tostring').xmlEncoding;
 const { isEmpty, isNil, each, isUndefined } = require('lodash');
+const readline = require('readline');
 
 const DEFAULT_FILE_ENCODING = 'iso-8859-15';
 const DIVISION = 'D';
@@ -63,7 +64,7 @@ class XMLParser {
   }
 
   async _detectEncoding() {
-    const firstLine = await this._readFirstLineFromFile();
+    const firstLine = await this._readFirstLine();
     this.encoding = xmlEncoding(Buffer.from(firstLine)) || DEFAULT_FILE_ENCODING;
   }
 
@@ -88,32 +89,15 @@ class XMLParser {
     return ext === ZIP
   }
 
-  async _readFirstLineFromFile() {
-    const readStream = await this._getRawStream();
-    return new Promise((resolve, reject) => {
-      const lineEndingCharacter = '\n';
-      const BOM = 0xFEFF;
-      let value = '';
-      let position = 0;
-      let index;
-      readStream.on('data', (chunk) => {
-        index = chunk.indexOf(lineEndingCharacter);
-        value += chunk;
-        if (index === -1) {
-          position += chunk.length;
-        } else {
-          position += index;
-          readStream.destroy();
-        }
+  async _readFirstLine() {
+    const stream = await this._getRawStream();
+    const firstLineReader = readline.createInterface({ input: stream });
+
+    return await new Promise((resolve) => {
+      firstLineReader.on('line', (line) => {
+        firstLineReader.close();
+        resolve(line);
       })
-        .on('close', () => {
-          const rawFirstLine = value;
-          const lineStartsAt = rawFirstLine.charCodeAt(0) === BOM ? 1 : 0;
-          const lineEndsAt = position;
-          const firstLine = rawFirstLine.slice(lineStartsAt, lineEndsAt);
-          resolve(firstLine);
-        })
-        .on('error', reject);
     });
   }
 }
