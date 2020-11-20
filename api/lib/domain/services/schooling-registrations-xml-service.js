@@ -51,12 +51,12 @@ function _unzippedStream(path) {
 
 const ZIP = 'zip';
 
-class XMLParser {
+class XMLStreamer {
   static async create(path) {
-    const parser = new XMLParser(path)
-    await parser._detectEncoding();
+    const stream = new XMLStreamer(path)
+    await stream._detectEncoding();
 
-    return parser;
+    return stream;
   }
 
   constructor(path) {
@@ -107,14 +107,14 @@ class XMLParser {
   }
 }
 
-let parser;
+let XMLstreamer;
 
 module.exports = {
   extractSchoolingRegistrationsInformationFromSIECLE,
 };
 
 async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
-  parser = await XMLParser.create(path)
+  XMLstreamer = await XMLStreamer.create(path)
 
   const UAIFromSIECLE = await _extractUAI(path);
   const UAIFromUserOrganization = organization.externalId;
@@ -137,12 +137,12 @@ async function _processSiecleFile() {
 }
 
 async function _withSiecleStream(fn) {
-  const siecleFileStream = await parser.getStream();
+  const siecleFileStream = await XMLstreamer.getStream();
 
   try {
     return await fn(siecleFileStream);
   } finally {
-    parser.destroyStream();
+    XMLstreamer.destroyStream();
   }
 }
 
