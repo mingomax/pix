@@ -33,11 +33,52 @@ class StreamPipe extends Stream.Transform {
   }
 }
 
+function _unzippedStream(path) {
+  const zip = new StreamZip({ file: path });
+  const stream = new StreamPipe();
+
+  zip.on('entry', (entry) => {
+    zip.stream(entry, (err, stm) => {
+
+      if (!entry.name.includes('/')) {
+        stm.pipe(stream);
+      }
+    });
+  });
+  return stream;
+}
+
+const ZIP = 'zip';
+
+class XMLParser {
+  constructor(path) {
+    this.path = path;
+  }
+  async getStream(){
+    let stream;
+    if (await this._isFileZipped()) {
+      stream = _unzippedStream(this.path);
+    }
+    else {
+      stream = fs.createReadStream(this.path);
+    }
+    return stream;
+  }
+
+  async _isFileZipped() {
+    const { ext } = await FileType.fromFile(this.path);
+    return ext === ZIP
+  }
+}
+
+let parser;
+
 module.exports = {
   extractSchoolingRegistrationsInformationFromSIECLE,
 };
 
 async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
+  parser = new XMLParser(path)
   const encoding = await _detectEncodingFromFirstLineOfSiecleFile(path);
 
   const UAIFromSIECLE = await _extractUAI(path, encoding);
@@ -61,7 +102,7 @@ async function _processSiecleFile(path, encoding) {
 }
 
 async function _withSiecleStream(path, encoding, fn) {
-  const rawStream = await createStream(path);
+  const rawStream = await parser.getStream();
   const siecleFileStream = rawStream.pipe(iconv.decodeStream(encoding));
 
   try {
@@ -155,7 +196,7 @@ function _mapStudentInformationToSchoolingRegistration(nodeData) {
 }
 
 async function _readFirstLineFromFile(path) {
-  const readStream = await createStream(path);
+  const readStream = await parser.getStream();
   return new Promise((resolve, reject) => {
     const lineEndingCharacter = '\n';
     const BOM = 0xFEFF;
