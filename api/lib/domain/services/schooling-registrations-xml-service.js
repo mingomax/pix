@@ -69,8 +69,9 @@ class XMLParser {
   }
 
   async getStream(){
-    const stream = await this._getRawStream();
-    return stream.pipe(iconv.decodeStream(this.encoding))
+    this.stream = await this._getRawStream();
+    const saxParser = sax.createStream(true);
+    return this.stream.pipe(iconv.decodeStream(this.encoding)).pipe(saxParser);
   }
 
   async _getRawStream(){
@@ -99,6 +100,10 @@ class XMLParser {
         resolve(line);
       })
     });
+  }
+
+  destroyStream() {
+    this.stream.destroy();
   }
 }
 
@@ -137,13 +142,12 @@ async function _withSiecleStream(fn) {
   try {
     return await fn(siecleFileStream);
   } finally {
-    siecleFileStream.destroy();
+    parser.destroyStream();
   }
 }
 
-function _extractUAIFromStream(siecleFileStream) {
+function _extractUAIFromStream(saxParser) {
   return new Promise(function(resolve, reject) {
-    const saxParser = sax.createStream(true);
     saxParser.on('error', () => {
       reject(new FileValidationError('XML invalide'));
     });
@@ -164,13 +168,11 @@ function _extractUAIFromStream(siecleFileStream) {
       reject(new FileValidationError(UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI));
     });
 
-    siecleFileStream.pipe(saxParser);
   });
 }
 
-function _extractStudentRegistrationsFromStream(siecleFileStream) {
+function _extractStudentRegistrationsFromStream(saxParser) {
   return new Promise(function(resolve, reject_) {
-    const saxParser = sax.createStream(true);
     saxParser.on('error', () => {
       reject(new FileValidationError(NO_STUDENTS_IMPORTED_FROM_INVALID_FILE));
     });
@@ -198,7 +200,6 @@ function _extractStudentRegistrationsFromStream(siecleFileStream) {
       }
     });
 
-    siecleFileStream.pipe(saxParser);
 
     streamerToParseSchoolingRegistrations.on('end', () => {
       resolve(Array.from(mapSchoolingRegistrationsByStudentId.values()));
