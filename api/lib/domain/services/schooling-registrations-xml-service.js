@@ -92,7 +92,7 @@ function _extractStudentRegistrationsFromStream(saxParser) {
     });
 
     const reject = (e) => {
-      saxParser.removeAllListeners();
+      saxParser.removeAllListeners();//si j'enlève cette ligne les tests passent
       return reject_(e);
     };
 
@@ -104,7 +104,7 @@ function _extractStudentRegistrationsFromStream(saxParser) {
       if (_isSchoolingRegistrationNode(xmlNode)) {
         xml2js.parseString(xmlNode, (err, nodeData) => {
           try {
-            if (err) throw err;
+            if (err) throw err;// Si j'enleve cette ligne les tests passent
             processStudentsNodes(mapSchoolingRegistrationsByStudentId, nodeData, nationalStudentIds);
             processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData);
           } catch (err) {
@@ -146,7 +146,7 @@ function _isSchoolingRegistrationNode(xmlNode) {
 function _isStudentEligible(studentData, mapSchoolingRegistrationsByStudentId) {
   const isStudentNotLeftSchoolingRegistration = isEmpty(studentData.DATE_SORTIE);
   const isStudentNotYetArrivedSchoolingRegistration = !isEmpty(studentData.ID_NATIONAL);
-  const isStudentNotDuplicatedInTheSIECLEFile = !mapSchoolingRegistrationsByStudentId.has(studentData.$.ELEVE_ID);
+  const isStudentNotDuplicatedInTheSIECLEFile = !mapSchoolingRegistrationsByStudentId.has(studentData.$.ELEVE_ID);// Si je fais isStudentNotDuplicatedInTheSIECLEFile = true les tests passent
   return isStudentNotLeftSchoolingRegistration && isStudentNotYetArrivedSchoolingRegistration && isStudentNotDuplicatedInTheSIECLEFile;
 }
 
