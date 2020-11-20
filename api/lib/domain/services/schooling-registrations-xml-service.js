@@ -68,6 +68,11 @@ class XMLParser {
     this.encoding = xmlEncoding(Buffer.from(firstLine)) || DEFAULT_FILE_ENCODING;
   }
 
+  async getStream(){
+    const stream = await this._getRawStream();
+    return stream.pipe(iconv.decodeStream(this.encoding))
+  }
+
   async _getRawStream(){
     let stream;
     if (await this._isFileZipped()) {
@@ -77,11 +82,6 @@ class XMLParser {
       stream = fs.createReadStream(this.path);
     }
     return stream;
-  }
-
-  async getStream(){
-    const stream = await this._getRawStream();
-    return stream.pipe(iconv.decodeStream(this.encoding))
   }
 
   async _isFileZipped() {
