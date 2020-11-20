@@ -17,6 +17,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     };
     targetProfileShareRepository = {
       addTargetProfilesToOrganization: sinon.stub(),
+      findByTargetProfileIdAndOrganizationId: sinon.stub(),
     };
   });
 
@@ -24,7 +25,26 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     // given
     targetProfileIdsToAttach = [1];
     targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 1 }]);
+
+    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
+    
     targetProfileShareRepository.addTargetProfilesToOrganization.withArgs({ organizationId, targetProfileIdList: targetProfileIdsToAttach }).resolves(expectedResult);
+
+    // when
+    const result = await attachTargetProfilesToOrganization({ targetProfileShareRepository, targetProfileRepository, organizationId, targetProfileIdsToAttach });
+
+    // then
+    expect(result).to.equal(expectedResult);
+  });
+
+  it('should call repository with organizationId and targetProfileIdsToAttach even one target profile already linked', async () => {
+    // given
+    targetProfileIdsToAttach = [1, 2];
+    targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 1 }, { id: 2 }]);
+
+    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([{ targetProfileId: 1 }]);
+    
+    targetProfileShareRepository.addTargetProfilesToOrganization.withArgs({ organizationId, targetProfileIdList: [2] }).resolves(expectedResult);
 
     // when
     const result = await attachTargetProfilesToOrganization({ targetProfileShareRepository, targetProfileRepository, organizationId, targetProfileIdsToAttach });
@@ -38,6 +58,8 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     targetProfileIdsToAttach = [1, 2, 2];
     const cleanedTargetProfileIdsToAttach = [1, 2];
     targetProfileRepository.findByIds.withArgs(cleanedTargetProfileIdsToAttach).resolves([{ id: 1 }, { id: 2 }]);
+    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
+
     targetProfileShareRepository.addTargetProfilesToOrganization.withArgs({ organizationId, targetProfileIdList: cleanedTargetProfileIdsToAttach }).resolves(expectedResult);
 
     // when
@@ -51,6 +73,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     // given
     targetProfileIdsToAttach = [1, 2];
     targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 2 }]);
+    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
 
     // when
     const error = await catchErr(attachTargetProfilesToOrganization)({ targetProfileShareRepository, targetProfileRepository, organizationId, targetProfileIdsToAttach });
@@ -58,5 +81,20 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     // then
     expect(error).to.be.instanceOf(NotFoundError);
     expect(error.message).to.equal('Le profil cible 1 n\'existe pas.');
+  });
+
+  it('should throw a NotFoundError when a target profile already attached to organization', async () => {
+    // given
+    targetProfileIdsToAttach = [1];
+    targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 1 }]);
+
+    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([{ targetProfileId : 1 }]);
+
+    // when
+    const error = await catchErr(attachTargetProfilesToOrganization)({ targetProfileShareRepository, targetProfileRepository, organizationId, targetProfileIdsToAttach });
+
+    // then
+    expect(error).to.be.instanceOf(NotFoundError);
+    expect(error.message).to.equal('Profil(s) cible(s) déjà rattaché.');
   });
 });
