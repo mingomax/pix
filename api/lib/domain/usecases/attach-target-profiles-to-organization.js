@@ -17,5 +17,14 @@ module.exports = async function attachTargetProfilesToOrganization({
     throw new NotFoundError(`Le profil cible ${targetProfileIdNotExisting} n'existe pas.`);
   }
 
-  return targetProfileShareRepository.addTargetProfilesToOrganization({ organizationId, targetProfileIdList: uniqueTargetProfileIdsToAttach });
+  const targetProfileSharesByOrganizationId = await targetProfileShareRepository.findByTargetProfileIdAndOrganizationId({ organizationId, targetProfileIdList: uniqueTargetProfileIdsToAttach });
+
+  const foundTargetProfileShareIds = _.map(targetProfileSharesByOrganizationId, 'targetProfileId');
+  const targetProfileShareToAttach = _.difference(uniqueTargetProfileIdsToAttach, foundTargetProfileShareIds);
+
+  if (targetProfileShareToAttach.length === 0) {
+    throw new NotFoundError('Profil(s) cible(s) déjà rattaché.');
+  }
+
+  return targetProfileShareRepository.addTargetProfilesToOrganization({ organizationId, targetProfileIdList: targetProfileShareToAttach });
 };
