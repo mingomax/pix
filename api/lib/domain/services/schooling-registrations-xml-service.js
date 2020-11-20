@@ -16,23 +16,34 @@ const XMLStreamer = require('../../infrastructure/utils/xml/xml-streamer');
 
 let XmlStreamer;
 
+class SiecleParser {
+  constructor(organization) {
+    this.organization = organization;
+  }
+
+  async parse() {
+    const UAIFromSIECLE = await _extractUAI();
+    const UAIFromUserOrganization = this.organization.externalId;
+
+    if (UAIFromSIECLE !== UAIFromUserOrganization) {
+      throw new FileValidationError(UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI);
+    }
+
+    const schoolingRegistrations = await _processSiecleFile();
+
+    return schoolingRegistrations.filter((schoolingRegistration) => !isUndefined(schoolingRegistration.division));
+  }
+}
+
 module.exports = {
   extractSchoolingRegistrationsInformationFromSIECLE,
 };
 
 async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
   XmlStreamer = await XMLStreamer.create(path)
+  parser = new SiecleParser(organization)
 
-  const UAIFromSIECLE = await _extractUAI(path);
-  const UAIFromUserOrganization = organization.externalId;
-
-  if (UAIFromSIECLE !== UAIFromUserOrganization) {
-    throw new FileValidationError(UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI);
-  }
-
-  const schoolingRegistrations = await _processSiecleFile(path);
-
-  return schoolingRegistrations.filter((schoolingRegistration) => !isUndefined(schoolingRegistration.division));
+  return parser.parse();
 }
 
 function _extractUAI() {
