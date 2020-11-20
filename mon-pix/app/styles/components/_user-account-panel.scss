@@ -1,0 +1,26 @@
+.user-account-panel {
+  margin: 0 auto;
+  position: relative;
+  top: -2rem;
+  max-width: 980px;
+
+  &_item {
+    margin: 20px 0px;
+    display: flex;
+    align-content: flex-start;
+    border-bottom: $grey-15 1px solid;
+    padding-bottom: 1rem;
+
+    &:last-child{
+      border-bottom: none;
+    }
+  }
+
+  &_label {
+    min-width: 200px;
+  }
+}
+
+.pix-block {
+  max-width: 60%;
+}
