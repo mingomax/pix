@@ -55,21 +55,6 @@ async function extractSchoolingRegistrationsInformationFromSIECLE(path, organiza
   return parser.parse();
 }
 
-
-async function _processSiecleFile() {
-  return _withSiecleStream(_extractStudentRegistrationsFromStream);
-}
-
-async function _withSiecleStream(fn) {
-  const siecleFileStream = await XmlStreamer.getStream();
-
-  try {
-    return await fn(siecleFileStream);
-  } finally {
-    XmlStreamer._destroyStream();
-  }
-}
-
 function _extractUAI(saxParser) {
   return new Promise(function(resolve, reject) {
     saxParser
