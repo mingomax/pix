@@ -22,16 +22,21 @@ class SiecleParser {
   }
 
   async parse() {
-    const UAIFromSIECLE = await _extractUAI();
+
+    await this.checkUAI();
+
+    const schoolingRegistrations = await _processSiecleFile();
+
+    return schoolingRegistrations.filter((schoolingRegistration) => !isUndefined(schoolingRegistration.division));
+  }
+
+  async checkUAI() {
+    const UAIFromSIECLE = await _withSiecleStream(_extractUAIFromStream);
     const UAIFromUserOrganization = this.organization.externalId;
 
     if (UAIFromSIECLE !== UAIFromUserOrganization) {
       throw new FileValidationError(UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI);
     }
-
-    const schoolingRegistrations = await _processSiecleFile();
-
-    return schoolingRegistrations.filter((schoolingRegistration) => !isUndefined(schoolingRegistration.division));
   }
 }
 
@@ -46,9 +51,6 @@ async function extractSchoolingRegistrationsInformationFromSIECLE(path, organiza
   return parser.parse();
 }
 
-function _extractUAI() {
-  return _withSiecleStream( _extractUAIFromStream);
-}
 
 async function _processSiecleFile() {
   return _withSiecleStream(_extractStudentRegistrationsFromStream);
@@ -60,15 +62,15 @@ async function _withSiecleStream(fn) {
   try {
     return await fn(siecleFileStream);
   } finally {
-    XmlStreamer.destroyStream();
+    XmlStreamer._destroyStream();
   }
 }
 
 function _extractUAIFromStream(saxParser) {
   return new Promise(function(resolve, reject) {
-    saxParser.on('error', () => {
-      reject(new FileValidationError('XML invalide'));
-    });
+    saxParser
+      .on('error', () => reject(new FileValidationError('XML invalide')))
+      .on('end', () => resolve(null));
 
     const streamerToParseOrganizationUAI = new saxPath.SaXPath(saxParser, NODE_ORGANIZATION_UAI);
 
@@ -76,16 +78,10 @@ function _extractUAIFromStream(saxParser) {
       xml2js.parseString(xmlNode, (err, nodeData) => {
         if (err) return reject(err);
         if (nodeData.PARAMETRES) {
-          const UAIFromSIECLE = _getValueFromParsedElement(nodeData.PARAMETRES.UAJ);
-          resolve(UAIFromSIECLE);
-        }
+            resolve(nodeData.PARAMETRES.UAJ[0]);// Si je garde que cette ligne tous les tests passent
+          }
       });
     });
-
-    saxParser.on('end', () => {
-      reject(new FileValidationError(UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI));
-    });
-
   });
 }
 
