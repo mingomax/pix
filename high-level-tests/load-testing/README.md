@@ -1,4 +1,22 @@
-# Génération des JDD
+# Déploiement dans Scalingo 
+
+Créer une application dans Scalingo, la lier au repository
+
+Alimenter la variable d'environnement suivante 
+``` shell script
+PROJECT_DIR=high-level-tests/load-testing
+```
+
+Vérifier que le `Procfile` contient un serveur web factice pour que le premier déploiement fonctionne.
+````
+web: ruby -run -e httpd /dev/null -p $PORT
+````
+
+Déployer
+
+Une fois le déploiement effectué, vous pouvez le passer à 0 conteneurs et effectuer les tests dans un one-off
+
+# Générer les JDD
 
 ## fichier SIECLE
 
@@ -24,24 +42,23 @@ SIECLE file for 4000 users in file SIECLE-organization-1237457A-4000-users.xml
 ```
 
 ## BDD
-Alimenter le fichier .env à partir de sample.env, notamment USER_COUNT
+
+### Paramétrage 
+Alimenter le fichier .env à partir de sample.env, notamment DATABASE_URL et USER_COUNT
 Exemple pour 1 million d'utilisateurs
 ````
 USER_COUNT=1000000
 ````
 
-
 ### Local 
-Exécuter `npm run generate-dataset`
+Exécuter `npm run actually-generate-dataset`
 
 ### Scalingo
-TODO: Créer configuration Scalingo sur high-level-tests  
-Exécuter `scalingo run --region osc-fr1 --app <NOM_APPLICATION> --size M --detached npm run generate-dataset`    
+Exécuter `scalingo run --region osc-fr1 --app load-testing npm run actually-generate-dataset`    
 
-# Exécution des tests
+# Exécuter les tests de charge
 
 ## Pré-requis :
-
 Faire tourner l'API en désactivant reCAPTCHA et MailJet. [PR #478](https://github.com/1024pix/pix/pull/478)
 
 ## Procédure :
