@@ -31,7 +31,7 @@ class SiecleParser {
   }
 
   async checkUAI() {
-    const UAIFromSIECLE = await XmlStreamer.perform(_extractUAIFromStream);
+    const UAIFromSIECLE = await XmlStreamer.perform(_extractUAI);
     const UAIFromUserOrganization = this.organization.externalId;
 
     if (UAIFromSIECLE !== UAIFromUserOrganization) {
@@ -66,7 +66,7 @@ async function _withSiecleStream(fn) {
   }
 }
 
-function _extractUAIFromStream(saxParser) {
+function _extractUAI(saxParser) {
   return new Promise(function(resolve, reject) {
     saxParser
       .on('error', () => reject(new FileValidationError('XML invalide')))
