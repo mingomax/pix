@@ -90,8 +90,18 @@ class XMLStreamer {
     });
   }
 
-  destroyStream() {
+  _destroyStream() {
     this.stream.destroy();
+  }
+
+  async perform(callback) {
+    const stream = await this.getStream();
+
+    try {
+      return await callback(stream);
+    } finally {
+      this._destroyStream();
+    }
   }
 }
 

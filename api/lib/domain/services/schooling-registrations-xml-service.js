@@ -31,7 +31,7 @@ class SiecleParser {
   }
 
   async checkUAI() {
-    const UAIFromSIECLE = await _withSiecleStream(_extractUAIFromStream);
+    const UAIFromSIECLE = await XmlStreamer.perform(_extractUAIFromStream);
     const UAIFromUserOrganization = this.organization.externalId;
 
     if (UAIFromSIECLE !== UAIFromUserOrganization) {
