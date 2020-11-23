@@ -1,4 +1,4 @@
-module.exports = async function attachOragnizationsToTargetProfile({
+module.exports = async function attachOrganizationsToTargetProfile({
   targetProfileId,
   organizationIds,
   targetProfileRepository,
