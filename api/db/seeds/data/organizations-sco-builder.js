@@ -215,8 +215,8 @@ module.exports = function organizationsScoBuilder({ databaseBuilder }) {
     name: 'Lycée Agricole & CFA',
     isManagingStudents: true,
     canCollectProfiles: true,
-    email: 'sco3.generic.account@example.net',
-    externalId: '1237457C',
+    email: 'sco4.generic.account@example.net',
+    externalId: '1237457D',
     provinceCode: '12',
   });
 
