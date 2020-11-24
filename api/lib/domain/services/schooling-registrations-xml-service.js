@@ -77,6 +77,29 @@ class SchoolingRegistrationsSet {
   }
 }
 
+function _mapStudentInformationToSchoolingRegistration(studentNode) {
+  return {
+    lastName: _getValueFromParsedElement(studentNode.NOM_DE_FAMILLE),
+    preferredLastName: _getValueFromParsedElement(studentNode.NOM_USAGE),
+    firstName: _getValueFromParsedElement(studentNode.PRENOM),
+    middleName: _getValueFromParsedElement(studentNode.PRENOM2),
+    thirdName: _getValueFromParsedElement(studentNode.PRENOM3),
+    birthdate: moment(studentNode.DATE_NAISS, 'DD/MM/YYYY').format('YYYY-MM-DD') || null,
+    birthCountryCode: _getValueFromParsedElement(studentNode.CODE_PAYS, null),
+    birthProvinceCode: _getValueFromParsedElement(studentNode.CODE_DEPARTEMENT_NAISS),
+    birthCityCode: _getValueFromParsedElement(studentNode.CODE_COMMUNE_INSEE_NAISS),
+    birthCity: _getValueFromParsedElement(studentNode.VILLE_NAISS),
+    MEFCode: _getValueFromParsedElement(studentNode.CODE_MEF),
+    status: _getValueFromParsedElement(studentNode.CODE_STATUT),
+    nationalStudentId: _getValueFromParsedElement(studentNode.ID_NATIONAL),
+  };
+}
+
+function _getValueFromParsedElement(obj) {
+  if (isNil(obj)) return null;
+  return (Array.isArray(obj) && !isEmpty(obj)) ? obj[0] : obj;
+}
+
 module.exports = {
   extractSchoolingRegistrationsInformationFromSIECLE,
 };
@@ -147,24 +170,6 @@ function _extractStudentRegistrationsFromStream(saxParser) {
   });
 }
 
-function _mapStudentInformationToSchoolingRegistration(studentNode) {
-  return {
-    lastName: _getValueFromParsedElement(studentNode.NOM_DE_FAMILLE),
-    preferredLastName: _getValueFromParsedElement(studentNode.NOM_USAGE),
-    firstName: _getValueFromParsedElement(studentNode.PRENOM),
-    middleName: _getValueFromParsedElement(studentNode.PRENOM2),
-    thirdName: _getValueFromParsedElement(studentNode.PRENOM3),
-    birthdate: moment(studentNode.DATE_NAISS, 'DD/MM/YYYY').format('YYYY-MM-DD') || null,
-    birthCountryCode: _getValueFromParsedElement(studentNode.CODE_PAYS, null),
-    birthProvinceCode: _getValueFromParsedElement(studentNode.CODE_DEPARTEMENT_NAISS),
-    birthCityCode: _getValueFromParsedElement(studentNode.CODE_COMMUNE_INSEE_NAISS),
-    birthCity: _getValueFromParsedElement(studentNode.VILLE_NAISS),
-    MEFCode: _getValueFromParsedElement(studentNode.CODE_MEF),
-    status: _getValueFromParsedElement(studentNode.CODE_STATUT),
-    nationalStudentId: _getValueFromParsedElement(studentNode.ID_NATIONAL),
-  };
-}
-
 function _isSchoolingRegistrationNode(xmlNode) {
   return xmlNode.startsWith(ELEVE_ELEMENT) || xmlNode.startsWith(STRUCTURE_ELEVE_ELEMENT);
 }
@@ -174,9 +179,4 @@ function _isImportable(studentData, mapSchoolingRegistrationsByStudentId) {
   const isStudentNotYetArrivedSchoolingRegistration = !isEmpty(studentData.ID_NATIONAL);
   const isStudentNotDuplicatedInTheSIECLEFile = !mapSchoolingRegistrationsByStudentId.has(studentData.$.ELEVE_ID);// Si je fais isStudentNotDuplicatedInTheSIECLEFile = true les tests passent
   return isStudentNotLeftSchoolingRegistration && isStudentNotYetArrivedSchoolingRegistration && isStudentNotDuplicatedInTheSIECLEFile;
-}
-
-function _getValueFromParsedElement(obj) {
-  if (isNil(obj)) return null;
-  return (Array.isArray(obj) && !isEmpty(obj)) ? obj[0] : obj;
 }
