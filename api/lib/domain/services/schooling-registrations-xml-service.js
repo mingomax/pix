@@ -95,10 +95,12 @@ function _extractStudentRegistrationsFromStream(saxParser) {
           try {
             if (err) throw err;// Si j'enleve cette ligne les tests passent
 
-            if(nodeData.ELEVE && _isStudentEligible(nodeData.ELEVE, mapSchoolingRegistrationsByStudentId)) {
+            if(nodeData.ELEVE && _isImportable(nodeData.ELEVE, mapSchoolingRegistrationsByStudentId)) {
               processStudentsNodes(mapSchoolingRegistrationsByStudentId, nodeData.ELEVE, nationalStudentIds);
             }
-            processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData);
+            else if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
+              processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData);
+            }
           } catch (err) {
             reject(err);
           }
@@ -135,7 +137,7 @@ function _isSchoolingRegistrationNode(xmlNode) {
   return xmlNode.startsWith(ELEVE_ELEMENT) || xmlNode.startsWith(STRUCTURE_ELEVE_ELEMENT);
 }
 
-function _isStudentEligible(studentData, mapSchoolingRegistrationsByStudentId) {
+function _isImportable(studentData, mapSchoolingRegistrationsByStudentId) {
   const isStudentNotLeftSchoolingRegistration = isEmpty(studentData.DATE_SORTIE);
   const isStudentNotYetArrivedSchoolingRegistration = !isEmpty(studentData.ID_NATIONAL);
   const isStudentNotDuplicatedInTheSIECLEFile = !mapSchoolingRegistrationsByStudentId.has(studentData.$.ELEVE_ID);// Si je fais isStudentNotDuplicatedInTheSIECLEFile = true les tests passent
@@ -155,16 +157,14 @@ function processStudentsNodes(mapSchoolingRegistrationsByStudentId, studentNode,
 }
 
 function processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData) {
-  if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
-    const currentStudent = mapSchoolingRegistrationsByStudentId.get(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID);
-    const structureElement = nodeData.STRUCTURES_ELEVE.STRUCTURE;
+  const currentStudent = mapSchoolingRegistrationsByStudentId.get(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID);
+  const structureElement = nodeData.STRUCTURES_ELEVE.STRUCTURE;
 
-    each(structureElement, (structure) => {
-      if (structure.TYPE_STRUCTURE[0] === DIVISION && structure.CODE_STRUCTURE[0] !== 'Inactifs') {
-        currentStudent.division = structure.CODE_STRUCTURE[0];
-      }
-    });
-  }
+  each(structureElement, (structure) => {
+    if (structure.TYPE_STRUCTURE[0] === DIVISION && structure.CODE_STRUCTURE[0] !== 'Inactifs') {
+      currentStudent.division = structure.CODE_STRUCTURE[0];
+    }
+  });
 }
 
 function _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId, nationalStudentIds) {
