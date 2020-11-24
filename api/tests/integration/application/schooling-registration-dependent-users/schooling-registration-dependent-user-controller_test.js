@@ -35,7 +35,7 @@ describe('Integration | Application | Schooling-registration-dependent-users | s
         'birthdate': '2012-12-12',
         'campaign-code': 'RESTRICTD',
         'password': 'P@ssw0rd',
-        'username': 'Robert.Smith1212',
+        'username': 'robert.smith1212',
         'with-username': true,
       };
     });

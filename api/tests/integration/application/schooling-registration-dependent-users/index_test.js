@@ -116,6 +116,16 @@ describe('Integration | Application | Route | schooling-registration-dependent-u
       // then
       expect(response.statusCode).to.equal(400);
     });
+
+    it('should return 400 when username is not valid', async () => {
+      // given
+      payload.data.attributes.username = 'robert.smith1212@example.net';
+
+      // when
+      response = await httpTestServer.request(method, url, payload);
+      // then
+      expect(response.statusCode).to.equal(400);
+    });
   });
 
   describe('POST /api/schooling-registration-dependent-users/external-user-token', () => {
