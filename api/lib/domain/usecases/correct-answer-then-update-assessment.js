@@ -1,10 +1,12 @@
 const {
   ChallengeAlreadyAnsweredError,
   ForbiddenAccess,
+  ObjectValidationError,
 } = require('../errors');
 const Examiner = require('../models/Examiner');
 const KnowledgeElement = require('../models/KnowledgeElement');
 const logger = require('../../infrastructure/logger');
+const { isNumeric } = require('../../../lib/infrastructure/utils/string-utils');
 
 module.exports = async function correctAnswerThenUpdateAssessment(
   {
@@ -86,6 +88,9 @@ module.exports = async function correctAnswerThenUpdateAssessment(
 };
 
 function _evaluateAnswer(challenge, answer) {
+  if (challenge.isFormatNumber() && !isNumeric(answer.value)) {
+    throw new ObjectValidationError();
+  }
   const examiner = new Examiner({ validator: challenge.validator });
   return examiner.evaluate(answer);
 }

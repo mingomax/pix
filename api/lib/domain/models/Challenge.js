@@ -101,6 +101,10 @@ class Challenge {
     return Number.isFinite(parseFloat(this.timer));
   }
 
+  isFormatNumber() {
+    return this.format === 'nombre';
+  }
+
   hasSkill(searchedSkill) {
     return this.skills.some((skill) => skill.id === searchedSkill.id);
   }

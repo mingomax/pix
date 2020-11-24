@@ -5,7 +5,7 @@ const AnswerStatus = require('../../../../lib/domain/models/AnswerStatus');
 const KnowledgeElement = require('../../../../lib/domain/models/KnowledgeElement');
 const correctAnswerThenUpdateAssessment = require('../../../../lib/domain/usecases/correct-answer-then-update-assessment');
 
-const { ChallengeAlreadyAnsweredError, NotFoundError, ForbiddenAccess } = require('../../../../lib/domain/errors');
+const { ChallengeAlreadyAnsweredError, NotFoundError, ForbiddenAccess, ObjectValidationError } = require('../../../../lib/domain/errors');
 
 describe('Unit | Domain | Use Cases | correct-answer-then-update-assessment', () => {
   const userId = 1;
@@ -665,6 +665,71 @@ describe('Unit | Domain | Use Cases | correct-answer-then-update-assessment', (
 
       // then
       return expect(result).to.be.rejectedWith(ForbiddenAccess);
+    });
+  });
+
+  context('when the format of the challenge is ‘number‘', () => {
+    let answer;
+    let assessment;
+    let completedAnswer;
+    let savedAnswer;
+
+    context('and the answer is not numerical', () => {
+      beforeEach(() => {
+        answer = domainBuilder.buildAnswer({ value: 'string solution' });
+        challenge = domainBuilder.buildChallenge({ id: answer.challengeId, format: 'nombre', validator });
+        assessment = domainBuilder.buildAssessment({ userId });
+        assessmentRepository.get.resolves(assessment);
+        answerRepository.findByChallengeAndAssessment.withArgs({ assessmentId: assessment.id, challengeId: challenge.id }).resolves(answer);
+        challengeRepository.get.resolves(challenge);
+      });
+      it('should throw an error', async () => {
+        // when
+        const error = await catchErr(correctAnswerThenUpdateAssessment)({
+          answer,
+          userId,
+          answerRepository,
+          assessmentRepository,
+          challengeRepository,
+          scorecardService,
+        });
+        // then
+        expect(error).to.be.an.instanceOf(ObjectValidationError);
+      });
+    });
+
+    context('and the answer is numerical', () => {
+      beforeEach(() => {
+        answer = domainBuilder.buildAnswer({ value: '123' });
+        challenge = domainBuilder.buildChallenge({ id: answer.challengeId, format: 'nombre', validator });
+        assessment = domainBuilder.buildAssessment({ userId });
+        assessmentRepository.get.resolves(assessment);
+        answerRepository.findByChallengeAndAssessment.withArgs({ assessmentId: assessment.id, challengeId: challenge.id }).resolves(answer);
+        challengeRepository.get.resolves(challenge);
+        completedAnswer = domainBuilder.buildAnswer(answer);
+        completedAnswer.id = undefined;
+        completedAnswer.result = AnswerStatus.OK;
+        completedAnswer.resultDetails = null;
+        savedAnswer = domainBuilder.buildAnswer(completedAnswer);
+        answerRepository.saveWithKnowledgeElements.resolves(savedAnswer);
+      });
+      it('should return the saved answer - with the id', async () => {
+        // when
+        const result = await correctAnswerThenUpdateAssessment({
+          answer,
+          userId,
+          answerRepository,
+          assessmentRepository,
+          challengeRepository,
+          competenceEvaluationRepository,
+          skillRepository,
+          targetProfileRepository,
+          knowledgeElementRepository,
+          scorecardService,
+        });
+        // then
+        expect(result).to.be.equal(savedAnswer);
+      });
     });
   });
 
