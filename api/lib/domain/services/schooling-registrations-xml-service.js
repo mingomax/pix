@@ -43,17 +43,6 @@ class SiecleParser {
   }
 }
 
-module.exports = {
-  extractSchoolingRegistrationsInformationFromSIECLE,
-};
-
-async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
-  XmlStreamer = await XMLStreamer.create(path)
-  parser = new SiecleParser(organization)
-
-  return parser.parse();
-}
-
 function _extractUAI(saxParser) {
   return new Promise(function(resolve, reject) {
     saxParser
@@ -66,11 +55,33 @@ function _extractUAI(saxParser) {
       xml2js.parseString(xmlNode, (err, nodeData) => {
         if (err) return reject(err);
         if (nodeData.PARAMETRES) {
-            resolve(nodeData.PARAMETRES.UAJ[0]);// Si je garde que cette ligne tous les tests passent
-          }
+          resolve(nodeData.PARAMETRES.UAJ[0]);// Si je garde que cette ligne tous les tests passent
+        }
       });
     });
   });
+}
+
+function _isSchoolingRegistrationNode(xmlNode) {
+  return xmlNode.startsWith(ELEVE_ELEMENT) || xmlNode.startsWith(STRUCTURE_ELEVE_ELEMENT);
+}
+
+function _isImportable(studentData, mapSchoolingRegistrationsByStudentId) {
+  const isStudentNotLeftSchoolingRegistration = isEmpty(studentData.DATE_SORTIE);
+  const isStudentNotYetArrivedSchoolingRegistration = !isEmpty(studentData.ID_NATIONAL);
+  // const isStudentNotDuplicatedInTheSIECLEFile = !mapSchoolingRegistrationsByStudentId.has(studentData.$.ELEVE_ID);// Si je fais isStudentNotDuplicatedInTheSIECLEFile = true les tests passent
+  return isStudentNotLeftSchoolingRegistration && isStudentNotYetArrivedSchoolingRegistration;// && isStudentNotDuplicatedInTheSIECLEFile;
+}
+
+module.exports = {
+  extractSchoolingRegistrationsInformationFromSIECLE,
+};
+
+async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
+  XmlStreamer = await XMLStreamer.create(path)
+  parser = new SiecleParser(organization)
+
+  return parser.parse();
 }
 
 function _extractStudentRegistrationsFromStream(saxParser) {
@@ -111,15 +122,4 @@ function _extractStudentRegistrationsFromStream(saxParser) {
       resolve(Array.from(mapSchoolingRegistrationsByStudentId.values()));
     });
   });
-}
-
-function _isSchoolingRegistrationNode(xmlNode) {
-  return xmlNode.startsWith(ELEVE_ELEMENT) || xmlNode.startsWith(STRUCTURE_ELEVE_ELEMENT);
-}
-
-function _isImportable(studentData, mapSchoolingRegistrationsByStudentId) {
-  const isStudentNotLeftSchoolingRegistration = isEmpty(studentData.DATE_SORTIE);
-  const isStudentNotYetArrivedSchoolingRegistration = !isEmpty(studentData.ID_NATIONAL);
-  const isStudentNotDuplicatedInTheSIECLEFile = !mapSchoolingRegistrationsByStudentId.has(studentData.$.ELEVE_ID);// Si je fais isStudentNotDuplicatedInTheSIECLEFile = true les tests passent
-  return isStudentNotLeftSchoolingRegistration && isStudentNotYetArrivedSchoolingRegistration && isStudentNotDuplicatedInTheSIECLEFile;
 }
