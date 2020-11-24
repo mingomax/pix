@@ -53,13 +53,13 @@ class SchoolingRegistrationsSet {
 
   add(id, xmlNode) {
     const nationalStudentId = _getValueFromParsedElement(xmlNode.ID_NATIONAL);
-    this._throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId);
+    this._checkNationalStudentIdUniqueness(nationalStudentId);
     this.studentIds.push(nationalStudentId);
 
     this.schoolingRegistrationsByStudentId.set(id, _mapStudentInformationToSchoolingRegistration(xmlNode));
   }
 
-  _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId) {
+  _checkNationalStudentIdUniqueness(nationalStudentId) {
     if (nationalStudentId && this.studentIds.includes(nationalStudentId)) {
       throw new SameNationalStudentIdInFileError(nationalStudentId);
     }
