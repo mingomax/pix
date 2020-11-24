@@ -53,6 +53,7 @@ class SchoolingRegistrationsSet {
 
   add(id, xmlNode) {
     const nationalStudentId = _getValueFromParsedElement(xmlNode.ID_NATIONAL);
+    _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId, this.studentIds);
     this.studentIds.push(nationalStudentId);
 
     this.schoolingRegistrationsByStudentId.set(id, _mapStudentInformationToSchoolingRegistration(xmlNode));
@@ -113,7 +114,7 @@ function _extractStudentRegistrationsFromStream(saxParser) {
 
             if(nodeData.ELEVE && _isImportable(nodeData.ELEVE, mapSchoolingRegistrationsByStudentId)) {
 
-              processStudentsNodes(schoolingRegistrationsSet, nodeData.ELEVE, nationalStudentIds);
+              processStudentsNodes(schoolingRegistrationsSet, nodeData.ELEVE);
             }
             else if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
               processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData);
@@ -166,10 +167,8 @@ function _getValueFromParsedElement(obj) {
   return (Array.isArray(obj) && !isEmpty(obj)) ? obj[0] : obj;
 }
 
-function processStudentsNodes(schoolingRegistrationsSet, studentNode, nationalStudentIds) {
-  const nationalStudentId = _getValueFromParsedElement(studentNode.ID_NATIONAL);
+function processStudentsNodes(schoolingRegistrationsSet, studentNode,) {
 
-  _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId, nationalStudentIds);
   schoolingRegistrationsSet.add(studentNode.$.ELEVE_ID, studentNode);
 }
 
