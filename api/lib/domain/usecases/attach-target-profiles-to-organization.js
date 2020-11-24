@@ -4,12 +4,14 @@ const { NotFoundError } = require('../errors');
 module.exports = async function attachTargetProfilesToOrganization({
   organizationId,
   targetProfileIdsToAttach,
+  organizationRepository,
   targetProfileRepository,
   targetProfileShareRepository,
 }) {
   const uniqueTargetProfileIdsToAttach = _.uniq(targetProfileIdsToAttach);
 
   const foundTargetProfiles = await targetProfileRepository.findByIds(uniqueTargetProfileIdsToAttach);
+  const organization = await organizationRepository.get(organizationId);
 
   if (foundTargetProfiles.length !== uniqueTargetProfileIdsToAttach.length) {
     const foundTargetProfileIds = _.map(foundTargetProfiles, 'id');
@@ -17,21 +19,12 @@ module.exports = async function attachTargetProfilesToOrganization({
     throw new NotFoundError(`Le profil cible ${targetProfileIdNotExisting} n'existe pas.`);
   }
 
-  const targetProfileShareToAttach = await _getTargetProfileToAttach({ organizationId, targetProfileShareRepository, targetProfileIdList: uniqueTargetProfileIdsToAttach });
-
-  return targetProfileShareRepository.addTargetProfilesToOrganization({ organizationId, targetProfileIdList: targetProfileShareToAttach });
-};
-
-async function _getTargetProfileToAttach({ organizationId, targetProfileIdList, targetProfileShareRepository }) {
-  const targetProfileSharesByOrganizationId = await targetProfileShareRepository.findByTargetProfileOfOrganization({ organizationId, targetProfileIdList });
-
-  const foundTargetProfileShareIds = _.map(targetProfileSharesByOrganizationId, 'targetProfileId');
-  
-  const targetProfileShareToAttach = _.difference(targetProfileIdList, foundTargetProfileShareIds);
+  const targetProfileIdOfOrganization = _.map(organization.targetProfileShares,'targetProfileId');
+  const targetProfileShareToAttach = _.difference(uniqueTargetProfileIdsToAttach, targetProfileIdOfOrganization);
 
   if (targetProfileShareToAttach.length === 0) {
     throw new NotFoundError('Profil(s) cible(s) déjà rattaché.');
   }
 
-  return targetProfileShareToAttach;
-}
+  return targetProfileShareRepository.addTargetProfilesToOrganization({ organizationId, targetProfileIdList: targetProfileShareToAttach });
+};

@@ -51,48 +51,4 @@ describe('Integration | Repository | Target-profile-share', () => {
       expect(_.map(targetProfileShares, 'targetProfileId')).exactlyContain([targetProfileIdA, targetProfileIdB, targetProfileIdC]);
     });
   });
-
-  describe('#findByTargetProfileOfOrganization', () => {
-
-    let organizationId;
-    let organizationId2;
-    let targetProfileIdA;
-    let targetProfileIdB;
-    let targetProfileIdC;
-
-    afterEach(() => {
-      return knex('target-profile-shares').delete();
-    });
-
-    beforeEach(() => {
-      organizationId = databaseBuilder.factory.buildOrganization().id;
-      organizationId2 = databaseBuilder.factory.buildOrganization().id;
-
-      targetProfileIdA = databaseBuilder.factory.buildTargetProfile().id;
-      targetProfileIdB = databaseBuilder.factory.buildTargetProfile().id;
-      targetProfileIdC = databaseBuilder.factory.buildTargetProfile().id;
-
-      return databaseBuilder.commit();
-    });
-
-    it('should return targetProfiles linked to an organization given predefined list', async function() {
-      // given
-      databaseBuilder.factory.buildTargetProfileShare({ organizationId, targetProfileId: targetProfileIdA });
-      databaseBuilder.factory.buildTargetProfileShare({ organizationId, targetProfileId: targetProfileIdC });
-
-      databaseBuilder.factory.buildTargetProfileShare({ organizationId : organizationId2, targetProfileId: targetProfileIdA });
-      databaseBuilder.factory.buildTargetProfileShare({ organizationId : organizationId2, targetProfileId: targetProfileIdB });
-      
-      await databaseBuilder.commit();
-      
-      const targetProfileIdList = [targetProfileIdA, targetProfileIdB];
-
-      // when
-      const targetProfileShares = await targetProfileShareRepository.findByTargetProfileOfOrganization({ organizationId, targetProfileIdList });
-
-      // then
-      expect(targetProfileShares).to.have.lengthOf(1);
-      expect(_.map(targetProfileShares, 'targetProfileId')).exactlyContain([targetProfileIdA]);
-    });
-  });
 });

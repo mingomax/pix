@@ -1,7 +1,4 @@
 const Bookshelf = require('../bookshelf');
-const BookshelfTargetProfileShare = require('../data/target-profile-share');
-
-const bookshelfToDomainConverter = require('../utils/bookshelf-to-domain-converter');
 
 module.exports = {
   addTargetProfilesToOrganization({ organizationId, targetProfileIdList }) {
@@ -10,16 +7,5 @@ module.exports = {
     });
     return Bookshelf.knex.batchInsert('target-profile-shares', targetProfileShareToAdd)
       .then(() => null);
-  },
-
-  async findByTargetProfileOfOrganization({ organizationId, targetProfileIdList }) {
-    const targetProfilesShareBookshelf = await BookshelfTargetProfileShare
-      .query((qb) => {
-        qb.where('organizationId', organizationId);
-        qb.whereIn('targetProfileId',  targetProfileIdList);
-      })
-      .fetchAll();
-
-    return bookshelfToDomainConverter.buildDomainObjects(BookshelfTargetProfileShare, targetProfilesShareBookshelf);
   },
 };
