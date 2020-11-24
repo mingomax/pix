@@ -12,7 +12,7 @@ module.exports = {
       .then(() => null);
   },
 
-  async findByTargetProfileIdAndOrganizationId({ organizationId, targetProfileIdList }) {
+  async findByTargetProfileOfOrganization({ organizationId, targetProfileIdList }) {
     const targetProfilesShareBookshelf = await BookshelfTargetProfilShare
       .query((qb) => {
         qb.where('organizationId', organizationId);

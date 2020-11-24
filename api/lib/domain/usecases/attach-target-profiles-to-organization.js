@@ -17,14 +17,21 @@ module.exports = async function attachTargetProfilesToOrganization({
     throw new NotFoundError(`Le profil cible ${targetProfileIdNotExisting} n'existe pas.`);
   }
 
-  const targetProfileSharesByOrganizationId = await targetProfileShareRepository.findByTargetProfileIdAndOrganizationId({ organizationId, targetProfileIdList: uniqueTargetProfileIdsToAttach });
+  const targetProfileShareToAttach = await _getTargetProfileToAttach({ organizationId, targetProfileShareRepository, targetProfileIdList: uniqueTargetProfileIdsToAttach });
+
+  return targetProfileShareRepository.addTargetProfilesToOrganization({ organizationId, targetProfileIdList: targetProfileShareToAttach });
+};
+
+async function _getTargetProfileToAttach({ organizationId, targetProfileIdList, targetProfileShareRepository }) {
+  const targetProfileSharesByOrganizationId = await targetProfileShareRepository.findByTargetProfileOfOrganization({ organizationId, targetProfileIdList });
 
   const foundTargetProfileShareIds = _.map(targetProfileSharesByOrganizationId, 'targetProfileId');
-  const targetProfileShareToAttach = _.difference(uniqueTargetProfileIdsToAttach, foundTargetProfileShareIds);
+  
+  const targetProfileShareToAttach = _.difference(targetProfileIdList, foundTargetProfileShareIds);
 
   if (targetProfileShareToAttach.length === 0) {
     throw new NotFoundError('Profil(s) cible(s) déjà rattaché.');
   }
 
-  return targetProfileShareRepository.addTargetProfilesToOrganization({ organizationId, targetProfileIdList: targetProfileShareToAttach });
-};
+  return targetProfileShareToAttach;
+}
