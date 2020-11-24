@@ -44,7 +44,7 @@ class SiecleParser {
   }
 }
 
-class SchoolingRegistrationsSet {
+class XMLSchoolingRegistrationsSet {
 
   constructor() {
     this.schoolingRegistrationsByStudentId = new Map();
@@ -141,7 +141,7 @@ function _extractStudentRegistrationsFromStream(saxParser) {
       return reject_(e);
     };
 
-    const schoolingRegistrationsSet = new SchoolingRegistrationsSet();
+    const schoolingRegistrationsSet = new XMLSchoolingRegistrationsSet();
     const mapSchoolingRegistrationsByStudentId = schoolingRegistrationsSet.schoolingRegistrationsByStudentId;
 
     const streamerToParseSchoolingRegistrations = new saxPath.SaXPath(saxParser, NODES_SCHOOLING_REGISTRATIONS);
