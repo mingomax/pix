@@ -59,6 +59,17 @@ class SchoolingRegistrationsSet {
     this.schoolingRegistrationsByStudentId.set(id, _mapStudentInformationToSchoolingRegistration(xmlNode));
   }
 
+  updateDivision(xmlNode) {
+    const currentStudent = this.schoolingRegistrationsByStudentId.get(xmlNode.STRUCTURES_ELEVE.$.ELEVE_ID);
+    const structureElement = xmlNode.STRUCTURES_ELEVE.STRUCTURE;
+
+    each(structureElement, (structure) => {
+      if (structure.TYPE_STRUCTURE[0] === DIVISION && structure.CODE_STRUCTURE[0] !== 'Inactifs') {
+        currentStudent.division = structure.CODE_STRUCTURE[0];
+      }
+    });
+  }
+
   _checkNationalStudentIdUniqueness(nationalStudentId) {
     if (nationalStudentId && this.studentIds.includes(nationalStudentId)) {
       throw new SameNationalStudentIdInFileError(nationalStudentId);
@@ -123,7 +134,7 @@ function _extractStudentRegistrationsFromStream(saxParser) {
               processStudentsNodes(schoolingRegistrationsSet, nodeData.ELEVE);
             }
             else if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
-              processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData);
+              processStudentsStructureNodes(schoolingRegistrationsSet, nodeData);
             }
           } catch (err) {
             reject(err);
@@ -178,13 +189,6 @@ function processStudentsNodes(schoolingRegistrationsSet, studentNode,) {
   schoolingRegistrationsSet.add(studentNode.$.ELEVE_ID, studentNode);
 }
 
-function processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData) {
-  const currentStudent = mapSchoolingRegistrationsByStudentId.get(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID);
-  const structureElement = nodeData.STRUCTURES_ELEVE.STRUCTURE;
-
-  each(structureElement, (structure) => {
-    if (structure.TYPE_STRUCTURE[0] === DIVISION && structure.CODE_STRUCTURE[0] !== 'Inactifs') {
-      currentStudent.division = structure.CODE_STRUCTURE[0];
-    }
-  });
+function processStudentsStructureNodes(schoolingRegistrationsSet, nodeData) {
+  schoolingRegistrationsSet.updateDivision(nodeData);
 }
