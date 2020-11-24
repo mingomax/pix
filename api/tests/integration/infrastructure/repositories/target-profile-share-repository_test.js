@@ -52,7 +52,7 @@ describe('Integration | Repository | Target-profile-share', () => {
     });
   });
 
-  describe('#findByTargetProfileIdAndOrganizationId', () => {
+  describe('#findByTargetProfileOfOrganization', () => {
 
     let organizationId;
     let organizationId2;
@@ -88,7 +88,7 @@ describe('Integration | Repository | Target-profile-share', () => {
       const targetProfileIdList = [targetProfileIdA, targetProfileIdB];
 
       // when
-      const targetProfileShares = await targetProfileShareRepository.findByTargetProfileIdAndOrganizationId({ organizationId, targetProfileIdList });
+      const targetProfileShares = await targetProfileShareRepository.findByTargetProfileOfOrganization({ organizationId, targetProfileIdList });
 
       // then
       expect(targetProfileShares).to.have.lengthOf(1);

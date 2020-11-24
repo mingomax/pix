@@ -17,7 +17,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     };
     targetProfileShareRepository = {
       addTargetProfilesToOrganization: sinon.stub(),
-      findByTargetProfileIdAndOrganizationId: sinon.stub(),
+      findByTargetProfileOfOrganization: sinon.stub(),
     };
   });
 
@@ -26,7 +26,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     targetProfileIdsToAttach = [1];
     targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 1 }]);
 
-    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
+    targetProfileShareRepository.findByTargetProfileOfOrganization.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
     
     targetProfileShareRepository.addTargetProfilesToOrganization.withArgs({ organizationId, targetProfileIdList: targetProfileIdsToAttach }).resolves(expectedResult);
 
@@ -42,7 +42,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     targetProfileIdsToAttach = [1, 2];
     targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 1 }, { id: 2 }]);
 
-    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([{ targetProfileId: 1 }]);
+    targetProfileShareRepository.findByTargetProfileOfOrganization.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([{ targetProfileId: 1 }]);
     
     targetProfileShareRepository.addTargetProfilesToOrganization.withArgs({ organizationId, targetProfileIdList: [2] }).resolves(expectedResult);
 
@@ -58,7 +58,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     targetProfileIdsToAttach = [1, 2, 2];
     const cleanedTargetProfileIdsToAttach = [1, 2];
     targetProfileRepository.findByIds.withArgs(cleanedTargetProfileIdsToAttach).resolves([{ id: 1 }, { id: 2 }]);
-    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
+    targetProfileShareRepository.findByTargetProfileOfOrganization.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
 
     targetProfileShareRepository.addTargetProfilesToOrganization.withArgs({ organizationId, targetProfileIdList: cleanedTargetProfileIdsToAttach }).resolves(expectedResult);
 
@@ -73,7 +73,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     // given
     targetProfileIdsToAttach = [1, 2];
     targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 2 }]);
-    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
+    targetProfileShareRepository.findByTargetProfileOfOrganization.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([]);
 
     // when
     const error = await catchErr(attachTargetProfilesToOrganization)({ targetProfileShareRepository, targetProfileRepository, organizationId, targetProfileIdsToAttach });
@@ -88,7 +88,7 @@ describe('Unit | UseCase | attach-target-profiles-to-organization', () => {
     targetProfileIdsToAttach = [1];
     targetProfileRepository.findByIds.withArgs(targetProfileIdsToAttach).resolves([{ id: 1 }]);
 
-    targetProfileShareRepository.findByTargetProfileIdAndOrganizationId.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([{ targetProfileId : 1 }]);
+    targetProfileShareRepository.findByTargetProfileOfOrganization.withArgs({ organizationId , targetProfileIdList: targetProfileIdsToAttach }).resolves([{ targetProfileId : 1 }]);
 
     // when
     const error = await catchErr(attachTargetProfilesToOrganization)({ targetProfileShareRepository, targetProfileRepository, organizationId, targetProfileIdsToAttach });
