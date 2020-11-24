@@ -13,11 +13,10 @@ const UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI = 'Aucun étudiant n’a été 
 const XMLStreamer = require('../../infrastructure/utils/xml/xml-streamer');
 const XMLSchoolingRegistrationSet = require('../../infrastructure/serializers/xml/xml-schooling-registration-set');
 
-let XmlStreamer;
-
 class SiecleParser {
-  constructor(organization) {
+  constructor(organization, xmlStreamer) {
     this.organization = organization;
+    this.xmlStreamer = xmlStreamer;
     this.schoolingRegistrationsSet = new XMLSchoolingRegistrationSet();
   }
 
@@ -31,7 +30,7 @@ class SiecleParser {
   }
 
   async _checkUAI() {
-    const UAIFromSIECLE = await XmlStreamer.perform(_extractUAI);
+    const UAIFromSIECLE = await this.xmlStreamer.perform(_extractUAI);
     const UAIFromUserOrganization = this.organization.externalId;
 
     if (UAIFromSIECLE !== UAIFromUserOrganization) {
@@ -41,7 +40,7 @@ class SiecleParser {
 
   async _parseStudent() {
     const bindedExtractMethod = this._extractStudentRegistrationsFromStream.bind(this)
-    return await XmlStreamer.perform(bindedExtractMethod);
+    return await this.xmlStreamer.perform(bindedExtractMethod);
   }
 
 
@@ -121,8 +120,8 @@ module.exports = {
 };
 
 async function extractSchoolingRegistrationsInformationFromSIECLE(path, organization) {
-  XmlStreamer = await XMLStreamer.create(path)
-  parser = new SiecleParser(organization)
+  const xmlStreamer = await XMLStreamer.create(path)
+  parser = new SiecleParser(organization, xmlStreamer);
 
   return parser.parse();
 }
