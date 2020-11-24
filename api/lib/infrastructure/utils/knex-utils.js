@@ -12,12 +12,13 @@ const DEFAULT_PAGE = 1;
  */
 const fetchPage = async (queryBuilder, { number = DEFAULT_PAGE, size = DEFAULT_PAGE_SIZE } = {}) => {
   const offset = (number - 1) * size;
+  const clone = queryBuilder.clone();
+  const { rowCount } = await knex
+    .count('*', { as: 'rowCount' })
+    .from(clone.as('t1'))
+    .first();
 
-  const results = await queryBuilder
-    .select(knex.raw('COUNT(*) OVER() AS ??', ['rowCount']))
-    .limit(size).offset(offset);
-
-  const rowCount = results.length ? results[0].rowCount : 0;
+  const results = await queryBuilder.limit(size).offset(offset);
 
   return {
     results,
