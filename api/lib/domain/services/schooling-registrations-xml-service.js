@@ -44,6 +44,18 @@ class SiecleParser {
   }
 }
 
+class SchoolingRegistrationsSet {
+
+  constructor() {
+    this.schoolingRegistrationsByStudentId = new Map();
+  }
+
+  add(id, xmlNode) {
+    this.schoolingRegistrationsByStudentId.set(id, _mapStudentInformationToSchoolingRegistration(xmlNode));
+  }
+
+}
+
 module.exports = {
   extractSchoolingRegistrationsInformationFromSIECLE,
 };
@@ -85,7 +97,8 @@ function _extractStudentRegistrationsFromStream(saxParser) {
       return reject_(e);
     };
 
-    const mapSchoolingRegistrationsByStudentId = new Map();
+    const schoolingRegistrationsSet = new SchoolingRegistrationsSet();
+    const mapSchoolingRegistrationsByStudentId = schoolingRegistrationsSet.schoolingRegistrationsByStudentId;
     const nationalStudentIds = [];
 
     const streamerToParseSchoolingRegistrations = new saxPath.SaXPath(saxParser, NODES_SCHOOLING_REGISTRATIONS);
@@ -96,7 +109,8 @@ function _extractStudentRegistrationsFromStream(saxParser) {
             if (err) throw err;// Si j'enleve cette ligne les tests passent
 
             if(nodeData.ELEVE && _isImportable(nodeData.ELEVE, mapSchoolingRegistrationsByStudentId)) {
-              processStudentsNodes(mapSchoolingRegistrationsByStudentId, nodeData.ELEVE, nationalStudentIds);
+
+              processStudentsNodes(schoolingRegistrationsSet, nodeData.ELEVE, nationalStudentIds);
             }
             else if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
               processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData);
@@ -149,11 +163,11 @@ function _getValueFromParsedElement(obj) {
   return (Array.isArray(obj) && !isEmpty(obj)) ? obj[0] : obj;
 }
 
-function processStudentsNodes(mapSchoolingRegistrationsByStudentId, studentNode, nationalStudentIds) {
+function processStudentsNodes(schoolingRegistrationsSet, studentNode, nationalStudentIds) {
   const nationalStudentId = _getValueFromParsedElement(studentNode.ID_NATIONAL);
   _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId, nationalStudentIds);
   nationalStudentIds.push(nationalStudentId);
-  mapSchoolingRegistrationsByStudentId.set(studentNode.$.ELEVE_ID, _mapStudentInformationToSchoolingRegistration(studentNode));
+  schoolingRegistrationsSet.add(studentNode.$.ELEVE_ID, studentNode);
 }
 
 function processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nodeData) {
