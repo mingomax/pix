@@ -53,10 +53,16 @@ class SchoolingRegistrationsSet {
 
   add(id, xmlNode) {
     const nationalStudentId = _getValueFromParsedElement(xmlNode.ID_NATIONAL);
-    _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId, this.studentIds);
+    this._throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId);
     this.studentIds.push(nationalStudentId);
 
     this.schoolingRegistrationsByStudentId.set(id, _mapStudentInformationToSchoolingRegistration(xmlNode));
+  }
+
+  _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId) {
+    if (nationalStudentId && this.studentIds.includes(nationalStudentId)) {
+      throw new SameNationalStudentIdInFileError(nationalStudentId);
+    }
   }
 }
 
@@ -181,10 +187,4 @@ function processStudentsStructureNodes(mapSchoolingRegistrationsByStudentId, nod
       currentStudent.division = structure.CODE_STRUCTURE[0];
     }
   });
-}
-
-function _throwIfNationalStudentIdIsDuplicatedInFile(nationalStudentId, nationalStudentIds) {
-  if (nationalStudentId && nationalStudentIds.indexOf(nationalStudentId) !== -1) {
-    throw new SameNationalStudentIdInFileError(nationalStudentId);
-  }
 }
