@@ -1,10 +1,8 @@
-const { FileValidationError, SameNationalStudentIdInFileError } = require('../errors');
-const moment = require('moment');
+const { FileValidationError } = require('../errors');
 const xml2js = require('xml2js');
 const saxPath = require('saxpath');
-const { isEmpty, isNil, each, isUndefined } = require('lodash');
+const { isEmpty, isUndefined } = require('lodash');
 
-const DIVISION = 'D';
 const NODE_ORGANIZATION_UAI = '/BEE_ELEVES/PARAMETRES';
 const NODES_SCHOOLING_REGISTRATIONS = '/BEE_ELEVES/DONNEES/*/*';
 const ELEVE_ELEMENT = '<ELEVE';
@@ -13,6 +11,7 @@ const NO_STUDENTS_IMPORTED_FROM_INVALID_FILE = 'Aucun élève n’a pu être imp
 const UAI_SIECLE_FILE_NOT_MATCH_ORGANIZATION_UAI = 'Aucun étudiant n’a été importé. L’import n’est pas possible car l’UAI du fichier SIECLE ne correspond pas à celui de votre établissement. En cas de difficulté, contactez support.pix.fr.';
 
 const XMLStreamer = require('../../infrastructure/utils/xml/xml-streamer');
+const XMLSchoolingRegistrationSet = require('../../infrastructure/serializers/xml/xml-schooling-registration-set');
 
 let XmlStreamer;
 
@@ -42,62 +41,6 @@ class SiecleParser {
   async _parseStudent() {
     return await XmlStreamer.perform(_extractStudentRegistrationsFromStream);
   }
-}
-
-class XMLSchoolingRegistrationsSet {
-
-  constructor() {
-    this.schoolingRegistrationsByStudentId = new Map();
-    this.studentIds = [];
-  }
-
-  add(id, xmlNode) {
-    const nationalStudentId = _getValueFromParsedElement(xmlNode.ID_NATIONAL);
-    this._checkNationalStudentIdUniqueness(nationalStudentId);
-    this.studentIds.push(nationalStudentId);
-
-    this.schoolingRegistrationsByStudentId.set(id, _mapStudentInformationToSchoolingRegistration(xmlNode));
-  }
-
-  updateDivision(xmlNode) {
-    const currentStudent = this.schoolingRegistrationsByStudentId.get(xmlNode.STRUCTURES_ELEVE.$.ELEVE_ID);
-    const structureElement = xmlNode.STRUCTURES_ELEVE.STRUCTURE;
-
-    each(structureElement, (structure) => {
-      if (structure.TYPE_STRUCTURE[0] === DIVISION && structure.CODE_STRUCTURE[0] !== 'Inactifs') {
-        currentStudent.division = structure.CODE_STRUCTURE[0];
-      }
-    });
-  }
-
-  _checkNationalStudentIdUniqueness(nationalStudentId) {
-    if (nationalStudentId && this.studentIds.includes(nationalStudentId)) {
-      throw new SameNationalStudentIdInFileError(nationalStudentId);
-    }
-  }
-}
-
-function _mapStudentInformationToSchoolingRegistration(studentNode) {
-  return {
-    lastName: _getValueFromParsedElement(studentNode.NOM_DE_FAMILLE),
-    preferredLastName: _getValueFromParsedElement(studentNode.NOM_USAGE),
-    firstName: _getValueFromParsedElement(studentNode.PRENOM),
-    middleName: _getValueFromParsedElement(studentNode.PRENOM2),
-    thirdName: _getValueFromParsedElement(studentNode.PRENOM3),
-    birthdate: moment(studentNode.DATE_NAISS, 'DD/MM/YYYY').format('YYYY-MM-DD') || null,
-    birthCountryCode: _getValueFromParsedElement(studentNode.CODE_PAYS, null),
-    birthProvinceCode: _getValueFromParsedElement(studentNode.CODE_DEPARTEMENT_NAISS),
-    birthCityCode: _getValueFromParsedElement(studentNode.CODE_COMMUNE_INSEE_NAISS),
-    birthCity: _getValueFromParsedElement(studentNode.VILLE_NAISS),
-    MEFCode: _getValueFromParsedElement(studentNode.CODE_MEF),
-    status: _getValueFromParsedElement(studentNode.CODE_STATUT),
-    nationalStudentId: _getValueFromParsedElement(studentNode.ID_NATIONAL),
-  };
-}
-
-function _getValueFromParsedElement(obj) {
-  if (isNil(obj)) return null;
-  return (Array.isArray(obj) && !isEmpty(obj)) ? obj[0] : obj;
 }
 
 module.exports = {
@@ -141,7 +84,7 @@ function _extractStudentRegistrationsFromStream(saxParser) {
       return reject_(e);
     };
 
-    const schoolingRegistrationsSet = new XMLSchoolingRegistrationsSet();
+    const schoolingRegistrationsSet = new XMLSchoolingRegistrationSet();
     const mapSchoolingRegistrationsByStudentId = schoolingRegistrationsSet.schoolingRegistrationsByStudentId;
 
     const streamerToParseSchoolingRegistrations = new saxPath.SaXPath(saxParser, NODES_SCHOOLING_REGISTRATIONS);
