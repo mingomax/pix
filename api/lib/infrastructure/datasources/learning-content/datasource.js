@@ -30,13 +30,13 @@ const _DatasourcePrototype = {
     return learningContent[this.modelName];
   },
 
-  async refreshLearningContentCacheRecord(id) {
-    const cacheKeyList = this.modelName;
-    const airtableRecord = await airtable.getRecord(this.tableName, id);
-    const newEntry = this.fromAirTableObject(airtableRecord);
-    const currentList = await this.list();
-    const newList = _.reject(currentList, { id }).concat([newEntry]);
-    await cache.set(cacheKeyList, newList);
+  async refreshLearningContentCacheRecord(newEntry) {
+    const currentLearningContent = await this.list();
+    const currentRecords = currentLearningContent[this.modelName];
+    const updatedRecords = _.reject(currentRecords, { id: newEntry.id }).concat([newEntry]);
+    const newLearningContent = Object.assign({}, currentLearningContent);
+    newLearningContent[this.modelName] = updatedRecords;
+    await cache.set(learningContentCacheKey, newLearningContent);
     return newEntry;
   },
 
