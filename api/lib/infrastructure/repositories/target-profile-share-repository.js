@@ -1,5 +1,5 @@
 const Bookshelf = require('../bookshelf');
-const BookshelfTargetProfilShare = require('../data/target-profile-share');
+const BookshelfTargetProfileShare = require('../data/target-profile-share');
 
 const bookshelfToDomainConverter = require('../utils/bookshelf-to-domain-converter');
 
@@ -13,13 +13,13 @@ module.exports = {
   },
 
   async findByTargetProfileOfOrganization({ organizationId, targetProfileIdList }) {
-    const targetProfilesShareBookshelf = await BookshelfTargetProfilShare
+    const targetProfilesShareBookshelf = await BookshelfTargetProfileShare
       .query((qb) => {
         qb.where('organizationId', organizationId);
         qb.whereIn('targetProfileId',  targetProfileIdList);
       })
       .fetchAll();
 
-    return bookshelfToDomainConverter.buildDomainObjects(BookshelfTargetProfilShare, targetProfilesShareBookshelf);
+    return bookshelfToDomainConverter.buildDomainObjects(BookshelfTargetProfileShare, targetProfilesShareBookshelf);
   },
 };
