@@ -120,7 +120,6 @@ function _extractStudentRegistrationsFromStream(saxParser) {
 
     const schoolingRegistrationsSet = new SchoolingRegistrationsSet();
     const mapSchoolingRegistrationsByStudentId = schoolingRegistrationsSet.schoolingRegistrationsByStudentId;
-    const nationalStudentIds = schoolingRegistrationsSet.studentIds;
 
     const streamerToParseSchoolingRegistrations = new saxPath.SaXPath(saxParser, NODES_SCHOOLING_REGISTRATIONS);
     streamerToParseSchoolingRegistrations.on('match', (xmlNode) => {
@@ -130,11 +129,9 @@ function _extractStudentRegistrationsFromStream(saxParser) {
             if (err) throw err;// Si j'enleve cette ligne les tests passent
 
             if(nodeData.ELEVE && _isImportable(nodeData.ELEVE, mapSchoolingRegistrationsByStudentId)) {
-
-              processStudentsNodes(schoolingRegistrationsSet, nodeData.ELEVE);
-            }
+              schoolingRegistrationsSet.add(nodeData.ELEVE.$.ELEVE_ID, nodeData.ELEVE);            }
             else if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
-              processStudentsStructureNodes(schoolingRegistrationsSet, nodeData);
+              schoolingRegistrationsSet.updateDivision(nodeData);
             }
           } catch (err) {
             reject(err);
@@ -182,13 +179,4 @@ function _isImportable(studentData, mapSchoolingRegistrationsByStudentId) {
 function _getValueFromParsedElement(obj) {
   if (isNil(obj)) return null;
   return (Array.isArray(obj) && !isEmpty(obj)) ? obj[0] : obj;
-}
-
-function processStudentsNodes(schoolingRegistrationsSet, studentNode,) {
-
-  schoolingRegistrationsSet.add(studentNode.$.ELEVE_ID, studentNode);
-}
-
-function processStudentsStructureNodes(schoolingRegistrationsSet, nodeData) {
-  schoolingRegistrationsSet.updateDivision(nodeData);
 }
