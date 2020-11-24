@@ -18,6 +18,7 @@ let XmlStreamer;
 class SiecleParser {
   constructor(organization) {
     this.organization = organization;
+    this.schoolingRegistrationsSet = new XMLSchoolingRegistrationSet();
   }
 
   async parse() {
@@ -39,8 +40,50 @@ class SiecleParser {
   }
 
   async _parseStudent() {
-    return await XmlStreamer.perform(_extractStudentRegistrationsFromStream);
+    const bindedExtractMethod = this._extractStudentRegistrationsFromStream.bind(this)
+    return await XmlStreamer.perform(bindedExtractMethod);
   }
+
+
+  _extractStudentRegistrationsFromStream(saxParser) {
+    return new Promise((resolve, reject_) => {
+      saxParser.on('error', () => {
+        reject(new FileValidationError(NO_STUDENTS_IMPORTED_FROM_INVALID_FILE));
+      });
+
+      const reject = (e) => {
+        saxParser.removeAllListeners();//si j'enlève cette ligne les tests passent
+        return reject_(e);
+      };
+
+      const mapSchoolingRegistrationsByStudentId = this.schoolingRegistrationsSet.schoolingRegistrationsByStudentId;
+
+      const streamerToParseSchoolingRegistrations = new saxPath.SaXPath(saxParser, NODES_SCHOOLING_REGISTRATIONS);
+      streamerToParseSchoolingRegistrations.on('match', (xmlNode) => {
+        if (_isSchoolingRegistrationNode(xmlNode)) {
+          xml2js.parseString(xmlNode, (err, nodeData) => {
+            try {
+              if (err) throw err;// Si j'enleve cette ligne les tests passent
+
+              if(nodeData.ELEVE && _isImportable(nodeData.ELEVE, mapSchoolingRegistrationsByStudentId)) {
+                this.schoolingRegistrationsSet.add(nodeData.ELEVE.$.ELEVE_ID, nodeData.ELEVE);            }
+              else if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
+                this.schoolingRegistrationsSet.updateDivision(nodeData);
+              }
+            } catch (err) {
+              reject(err);
+            }
+          });
+        }
+      });
+
+
+      streamerToParseSchoolingRegistrations.on('end', () => {
+        resolve(Array.from(mapSchoolingRegistrationsByStudentId.values()));
+      });
+    });
+  }
+
 }
 
 function _extractUAI(saxParser) {
@@ -82,44 +125,4 @@ async function extractSchoolingRegistrationsInformationFromSIECLE(path, organiza
   parser = new SiecleParser(organization)
 
   return parser.parse();
-}
-
-function _extractStudentRegistrationsFromStream(saxParser) {
-  return new Promise(function(resolve, reject_) {
-    saxParser.on('error', () => {
-      reject(new FileValidationError(NO_STUDENTS_IMPORTED_FROM_INVALID_FILE));
-    });
-
-    const reject = (e) => {
-      saxParser.removeAllListeners();//si j'enlève cette ligne les tests passent
-      return reject_(e);
-    };
-
-    const schoolingRegistrationsSet = new XMLSchoolingRegistrationSet();
-    const mapSchoolingRegistrationsByStudentId = schoolingRegistrationsSet.schoolingRegistrationsByStudentId;
-
-    const streamerToParseSchoolingRegistrations = new saxPath.SaXPath(saxParser, NODES_SCHOOLING_REGISTRATIONS);
-    streamerToParseSchoolingRegistrations.on('match', (xmlNode) => {
-      if (_isSchoolingRegistrationNode(xmlNode)) {
-        xml2js.parseString(xmlNode, (err, nodeData) => {
-          try {
-            if (err) throw err;// Si j'enleve cette ligne les tests passent
-
-            if(nodeData.ELEVE && _isImportable(nodeData.ELEVE, mapSchoolingRegistrationsByStudentId)) {
-              schoolingRegistrationsSet.add(nodeData.ELEVE.$.ELEVE_ID, nodeData.ELEVE);            }
-            else if (nodeData.STRUCTURES_ELEVE && mapSchoolingRegistrationsByStudentId.has(nodeData.STRUCTURES_ELEVE.$.ELEVE_ID)) {
-              schoolingRegistrationsSet.updateDivision(nodeData);
-            }
-          } catch (err) {
-            reject(err);
-          }
-        });
-      }
-    });
-
-
-    streamerToParseSchoolingRegistrations.on('end', () => {
-      resolve(Array.from(mapSchoolingRegistrationsByStudentId.values()));
-    });
-  });
 }
